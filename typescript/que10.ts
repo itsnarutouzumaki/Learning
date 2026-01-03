@@ -1,0 +1,1 @@
+// Use Partial<T> on a User type.
