@@ -1,0 +1,1 @@
+// 35️⃣ Use as const to create a readonly object with literal types.

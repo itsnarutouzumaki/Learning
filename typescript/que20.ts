@@ -1,0 +1,1 @@
+// Use Pick<T, K> to extract specific properties from a type.
