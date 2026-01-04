@@ -1,5 +1,5 @@
-for i in range(1, 21):
-    filename = f"que{i}.py"
+for i in range(21, 51):
+    filename = f"./typescript/que{i}.ts"
     
     with open(filename, 'w') as file:
         pass
