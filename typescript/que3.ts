@@ -6,9 +6,9 @@ type user = {
   email?: string
 };
 
-const user1 : user = {
-  id:"2023CA99",
-  name:"Somenath Singh"
+const user1: user = {
+  id: "2023CA99",
+  name: "Somenath Singh"
 }
 
 console.log(user1);
