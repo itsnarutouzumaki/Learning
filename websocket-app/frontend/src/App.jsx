@@ -1,55 +1,69 @@
-import React, { useState, useEffect, useRef } from 'react';
-import useWebSocket from 'react-use-websocket';
-import './App.css';
+import React, { useState, useEffect, useRef } from "react";
+import useWebSocket from "react-use-websocket";
+import "./App.css";
 
 function App() {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const [username, setUsername] = useState('User');
+  const [username, setUsername] = useState("User");
   const [clientId, setClientId] = useState(null);
   const [connectedUsers, setConnectedUsers] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Set());
   const messagesEndRef = useRef(null);
 
   // WebSocket connection
-  const WS_URL = 'ws://localhost:8080';
-  const { sendMessage, lastMessage, readyState, getWebSocket } = useWebSocket(WS_URL, {
-    onOpen: () => {
-      console.log('✅ WebSocket connected');
-      addSystemMessage('Connected to server');
-    },
-    onClose: () => {
-      console.log('❌ WebSocket disconnected');
-      addSystemMessage('Disconnected from server');
-    },
-    onError: (event) => {
-      console.error('WebSocket error:', event);
-    },
-    shouldReconnect: () => true,
-    reconnectAttempts: 10,
-    reconnectInterval: 3000,
-    share: true,
-  });
+  const WS_URL = "ws://localhost:8080";
+  const { sendMessage, lastMessage, readyState, getWebSocket } = useWebSocket(
+    WS_URL,
+    {
+      onOpen: () => {
+        console.log("✅ WebSocket connected");
+        addSystemMessage("Connected to server");
+      },
+      onClose: () => {
+        console.log("❌ WebSocket disconnected");
+        addSystemMessage("Disconnected from server");
+      },
+      onError: (event) => {
+        console.error("WebSocket error:", event);
+      },
+      shouldReconnect: () => true,
+      reconnectAttempts: 10,
+      reconnectInterval: 3000,
+      share: true,
+    }
+  );
 
   // Add message helper
-  const addMessage = (sender, text, isSystem = false, timestamp = new Date()) => {
-    setMessages(prev => [...prev, {
-      id: Date.now() + Math.random(),
-      sender,
-      text,
-      isSystem,
-      isOwn: sender === 'You',
-      timestamp: timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }]);
+  const addMessage = (
+    sender,
+    text,
+    isSystem = false,
+    timestamp = new Date()
+  ) => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now() + Math.random(),
+        sender,
+        text,
+        isSystem,
+        isOwn: sender === "You",
+        timestamp: timestamp.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
+    ]);
   };
 
   const addSystemMessage = (text) => {
-    addMessage('System', text, true);
+    addMessage("System", text, true);
   };
 
   // Scroll to bottom
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -61,18 +75,18 @@ function App() {
     if (lastMessage !== null) {
       try {
         const data = JSON.parse(lastMessage.data);
-        console.log('📨 Received:', data);
+        console.log("📨 Received:", data);
 
         switch (data.type) {
-          case 'welcome':
+          case "welcome":
             setClientId(data.clientId);
             addSystemMessage(data.message);
-            if (!username.startsWith('User')) {
+            if (!username.startsWith("User")) {
               setUsername(`User_${data.clientId}`);
             }
             break;
 
-          case 'chat':
+          case "chat":
             addMessage(
               data.username || `User_${data.clientId}`,
               data.message,
@@ -81,28 +95,33 @@ function App() {
             );
             break;
 
-          case 'user-joined':
+          case "user-joined":
             addSystemMessage(data.message);
-            setConnectedUsers(prev => [...prev, {
-              id: data.clientId,
-              username: data.username || `User_${data.clientId}`
-            }]);
+            setConnectedUsers((prev) => [
+              ...prev,
+              {
+                id: data.clientId,
+                username: data.username || `User_${data.clientId}`,
+              },
+            ]);
             break;
 
-          case 'user-left':
+          case "user-left":
             addSystemMessage(data.message);
-            setConnectedUsers(prev => prev.filter(user => user.id !== data.clientId));
+            setConnectedUsers((prev) =>
+              prev.filter((user) => user.id !== data.clientId)
+            );
             break;
 
-          case 'typing':
-            setTypingUsers(prev => {
+          case "typing":
+            setTypingUsers((prev) => {
               const newSet = new Set(prev);
               newSet.add(data.username || `User_${data.clientId}`);
               return newSet;
             });
             // Clear after 3 seconds
             setTimeout(() => {
-              setTypingUsers(prev => {
+              setTypingUsers((prev) => {
                 const newSet = new Set(prev);
                 newSet.delete(data.username || `User_${data.clientId}`);
                 return newSet;
@@ -110,16 +129,16 @@ function App() {
             }, 3000);
             break;
 
-          case 'echo':
-            console.log('Echo received:', data);
+          case "echo":
+            console.log("Echo received:", data);
             break;
 
           default:
-            console.log('Unknown message type:', data);
+            console.log("Unknown message type:", data);
         }
       } catch (error) {
-        console.error('Error parsing message:', error);
-        addSystemMessage('Error receiving message');
+        console.error("Error parsing message:", error);
+        addSystemMessage("Error receiving message");
       }
     }
   }, [lastMessage]);
@@ -129,25 +148,27 @@ function App() {
     e.preventDefault();
     if (message.trim() && readyState === 1) {
       const msgData = {
-        type: 'chat',
+        type: "chat",
         message: message,
         username: username,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
+
       sendMessage(JSON.stringify(msgData));
-      addMessage('You', message);
-      setMessage('');
+      addMessage("You", message);
+      setMessage("");
     }
   };
 
   // Send typing indicator
   const handleTyping = () => {
     if (message.trim() && readyState === 1) {
-      sendMessage(JSON.stringify({
-        type: 'typing',
-        username: username
-      }));
+      sendMessage(
+        JSON.stringify({
+          type: "typing",
+          username: username,
+        })
+      );
     }
   };
 
@@ -164,22 +185,24 @@ function App() {
   // Test connection
   const testConnection = () => {
     if (readyState === 1) {
-      sendMessage(JSON.stringify({
-        type: 'test',
-        message: 'Ping from client',
-        timestamp: new Date().toISOString(),
-        clientId: clientId
-      }));
-      addSystemMessage('Test message sent');
+      sendMessage(
+        JSON.stringify({
+          type: "test",
+          message: "Ping from client",
+          timestamp: new Date().toISOString(),
+          clientId: clientId,
+        })
+      );
+      addSystemMessage("Test message sent");
     }
   };
 
   // Connection status
   const connectionStatus = {
-    0: { text: 'Connecting...', color: 'orange' },
-    1: { text: 'Connected', color: 'green' },
-    2: { text: 'Closing', color: 'orange' },
-    3: { text: 'Disconnected', color: 'red' }
+    0: { text: "Connecting...", color: "orange" },
+    1: { text: "Connected", color: "green" },
+    2: { text: "Closing", color: "orange" },
+    3: { text: "Disconnected", color: "red" },
   }[readyState];
 
   // Active users count
@@ -192,7 +215,9 @@ function App() {
         <div className="header-content">
           <h1>💬 WebSocket Chat</h1>
           <div className="connection-info">
-            <div className={`status-dot ${connectionStatus.text.toLowerCase()}`}></div>
+            <div
+              className={`status-dot ${connectionStatus.text.toLowerCase()}`}
+            ></div>
             <span className="status-text">{connectionStatus.text}</span>
             {clientId && <span className="client-id">• ID: {clientId}</span>}
             <span className="users-count">• 👥 {activeUsers} online</span>
@@ -216,7 +241,9 @@ function App() {
               messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`message ${msg.isSystem ? 'system' : ''} ${msg.isOwn ? 'own' : ''}`}
+                  className={`message ${msg.isSystem ? "system" : ""} ${
+                    msg.isOwn ? "own" : ""
+                  }`}
                 >
                   {!msg.isSystem && (
                     <div className="message-header">
@@ -241,7 +268,8 @@ function App() {
                   <span></span>
                 </div>
                 <span className="typing-text">
-                  {Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? 'is' : 'are'} typing...
+                  {Array.from(typingUsers).join(", ")}{" "}
+                  {typingUsers.size === 1 ? "is" : "are"} typing...
                 </span>
               </div>
             )}
@@ -257,7 +285,7 @@ function App() {
                   type="text"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(e)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage(e)}
                   placeholder="Type your message here..."
                   disabled={readyState !== 1}
                   className="message-input"
@@ -286,7 +314,7 @@ function App() {
                   className="username-input"
                 />
               </div>
-              
+
               <button
                 onClick={testConnection}
                 disabled={readyState !== 1}
@@ -303,10 +331,12 @@ function App() {
           <div className="sidebar-section">
             <h3>👤 User Info</h3>
             <div className="user-info-card">
-              <div className="user-avatar">{username.charAt(0).toUpperCase()}</div>
+              <div className="user-avatar">
+                {username.charAt(0).toUpperCase()}
+              </div>
               <div className="user-details">
                 <div className="user-name">{username}</div>
-                <div className="user-id">ID: {clientId || 'Connecting...'}</div>
+                <div className="user-id">ID: {clientId || "Connecting..."}</div>
               </div>
             </div>
           </div>
@@ -316,7 +346,9 @@ function App() {
             <div className="connection-stats">
               <div className="stat">
                 <div className="stat-label">Status</div>
-                <div className={`stat-value ${connectionStatus.text.toLowerCase()}`}>
+                <div
+                  className={`stat-value ${connectionStatus.text.toLowerCase()}`}
+                >
                   {connectionStatus.text}
                 </div>
               </div>
@@ -334,10 +366,7 @@ function App() {
           <div className="sidebar-section">
             <h3>🛠️ Tools</h3>
             <div className="tools">
-              <button
-                onClick={() => setMessages([])}
-                className="tool-button"
-              >
+              <button onClick={() => setMessages([])} className="tool-button">
                 🗑️ Clear Chat
               </button>
               <button
@@ -364,10 +393,12 @@ function App() {
 
       {/* Footer */}
       <footer className="app-footer">
-        <p>WebSocket Demo • Real-time Communication • Built with React + Vite</p>
+        <p>
+          WebSocket Demo • Real-time Communication • Built with React + Vite
+        </p>
         <p className="footer-note">
-          Backend running on: <code>ws://localhost:8080</code> • 
-          Open multiple tabs to test multi-user chat
+          Backend running on: <code>ws://localhost:8080</code> • Open multiple
+          tabs to test multi-user chat
         </p>
       </footer>
     </div>
